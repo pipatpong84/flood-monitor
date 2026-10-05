@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flood Monitor & Handbook — สถานการณ์น้ำ & ฝน กทม.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'Sarabun', 'sans-serif']
+          },
+          colors: {
+            slate: {
+              850: '#0F172A',
+              900: '#0B1120',
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- Main Container -->
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    
+    <!-- Top Header -->
+    <header class="mb-6">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase tracking-wider font-display">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          Live Monitoring
+        </span>
+        <span class="text-xs text-slate-400">อัปเดต: 2026-10-05 09:00</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-white mb-1">
+        สถานการณ์น้ำ & เฝ้าระวังน้ำท่วม
+      </h1>
+      <p class="text-sm text-slate-400">
+        ลุ่มน้ำเจ้าพระยา & กรุงเทพมหานคร • แดชบอร์ด & คู่มือประเมินความเสี่ยงกันลืม
+      </p>
+    </header>
+
+    
+
+    <!-- SECTION 1: LIVE DATA METRICS -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8 shadow-xl">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display flex items-center gap-2">
+          <span>🌊</span> อัตราการไหลของน้ำ (3 สถานีหลัก)
+        </h2>
+        <span class="text-[11px] text-slate-500">หน่วย: ลบ.ม./วินาที (cms)</span>
+      </div>
+
+      <!-- Station 1: C.2 -->
+      <div class="mb-5">
+        <div class="flex justify-between items-baseline mb-1">
+          <div>
+            <span class="font-bold text-white text-sm sm:text-base">C.2 นครสวรรค์</span>
+            <span class="text-xs text-slate-400 ml-1">(รับน้ำเหนือ (ค่ายจิรประวัติ))</span>
+          </div>
+          <div class="text-right">
+            <span class="font-bold text-base sm:text-lg font-display" style="color: #F59E0B;">2,023</span>
+            <span class="text-xs text-slate-500">/ 3,500 cms</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width: 57.8%; background-color: #F59E0B;"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] mt-1.5">
+          <span class="text-slate-400">รับน้ำเหนือ • มีแนวโน้มระบายลงเขื่อนเจ้าพระยาใน 48 ชม.</span>
+          <span class="font-semibold" style="color: #F59E0B;">🟡 เฝ้าระวัง</span>
+        </div>
+      </div>
+
+      <!-- Station 2: C.13 -->
+      <div class="mb-5">
+        <div class="flex justify-between items-baseline mb-1">
+          <div>
+            <span class="font-bold text-white text-sm sm:text-base">C.13 เขื่อนเจ้าพระยา</span>
+            <span class="text-xs text-slate-400 ml-1">(จุดระบายน้ำท้ายเขื่อน จ.ชัยนาท)</span>
+          </div>
+          <div class="text-right">
+            <span class="font-bold text-base sm:text-lg font-display" style="color: #EA580C;">2,500</span>
+            <span class="text-xs text-slate-500">/ 3,000 cms</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width: 83.3%; background-color: #EA580C;"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] mt-1.5">
+          <span class="text-slate-400">ระดับน้ำสูงมาก • เสริมแนวกระสอบทรายและยกของขึ้นที่สูง</span>
+          <span class="font-semibold" style="color: #EA580C;">🟠 เตือนภัย</span>
+        </div>
+      </div>
+
+      <!-- Station 3: C.29B -->
+      <div class="mb-6">
+        <div class="flex justify-between items-baseline mb-1">
+          <div>
+            <span class="font-bold text-white text-sm sm:text-base">C.29B ปทุมธานี</span>
+            <span class="text-xs text-slate-400 ml-1">(ด่านหน้าก่อนเข้า กทม. (บางไทร/สามโคก))</span>
+          </div>
+          <div class="text-right">
+            <span class="font-bold text-base sm:text-lg font-display" style="color: #EF4444;">3,329</span>
+            <span class="text-xs text-slate-500">/ 3,500 cms</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width: 95.1%; background-color: #EF4444;"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] mt-1.5">
+          <span class="text-slate-400">สัญญาณวิกฤตล้นคันกั้นน้ำ • กทม. เสี่ยงน้ำท่วมใหญ่</span>
+          <span class="font-semibold" style="color: #EF4444;">🔴 วิกฤต</span>
+        </div>
+      </div>
+
+      <!-- Rainfall Section -->
+      <div class="pt-4 border-t border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display flex items-center gap-2">
+            <span>🌧️</span> ปริมาณฝนเฉพาะหน้า (กทม.)
+          </h2>
+          <span class="text-[11px] text-slate-500">เกณฑ์ท่วมขัง: > 60 มม./ชม.</span>
+        </div>
+        <div class="flex justify-between items-baseline mb-1">
+          <div>
+            <span class="font-bold text-white text-sm sm:text-base">เรดาร์ฝน กทม.</span>
+            <span class="text-xs text-slate-400 ml-1">(เซนเซอร์ 50 เขต)</span>
+          </div>
+          <div class="text-right">
+            <span class="font-bold text-base sm:text-lg font-display" style="color: #F59E0B;">38.2</span>
+            <span class="text-xs text-slate-500">/ 60.0 มม./ชม.</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width: 63.7%; background-color: #F59E0B;"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] mt-1.5">
+          <span class="text-slate-400">ฝนปานกลาง • เฝ้าระวังจุดเสี่ยงลุ่มต่ำและพื้นที่ฝั่งตะวันออก</span>
+          <span class="font-semibold" style="color: #F59E0B;">🟡 เฝ้าระวัง</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 72H VISUAL RIVER FLOW -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
+        <span>🗺️</span> แผนผังเส้นทางน้ำ & เวลาเดินทาง (72-Hour Horizon)
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center text-xs">
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <div class="text-cyan-400 font-bold mb-1">C.2 นครสวรรค์</div>
+          <div class="text-[11px] text-slate-400">รับน้ำ ปิง วัง ยม น่าน</div>
+          <div class="mt-2 text-[10px] text-amber-400 font-mono">เดินทาง ~48 ชม. ↓</div>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <div class="text-cyan-400 font-bold mb-1">C.13 เขื่อนเจ้าพระยา</div>
+          <div class="text-[11px] text-slate-400">จุดชี้ชะตาระบายน้ำ</div>
+          <div class="mt-2 text-[10px] text-amber-400 font-mono">เดินทาง ~24 ชม. ↓</div>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <div class="text-cyan-400 font-bold mb-1">C.29B ปทุมธานี</div>
+          <div class="text-[11px] text-slate-400">ด่านหน้าก่อนเข้า กทม.</div>
+          <div class="mt-2 text-[10px] text-emerald-400 font-mono">แนวป้องกันชั้นใน ↓</div>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <div class="text-cyan-400 font-bold mb-1">กทม. & อ่าวไทย</div>
+          <div class="text-[11px] text-slate-400">รับน้ำเหนือ + ทะเลหนุน</div>
+          <div class="mt-2 text-[10px] text-slate-400 font-mono">ออกสู่ทะเล</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: 1-YEAR CHEATSHEET & MAGIC NUMBERS -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
+        <span>📖</span> คู่มือจำเกณฑ์ตัดสินใจ (Magic Numbers กันลืม 1 ปี)
+      </h2>
+      <div class="space-y-3 text-xs sm:text-sm">
+        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">&lt; 1,800 cms</span>
+          <div>
+            <strong class="text-white">ปลอดภัย 100%</strong>
+            <p class="text-slate-400 text-xs mt-0.5">การระบายน้ำอยู่ในเกณฑ์ปกติ คันกั้นน้ำ กทม. รับน้ำได้สบาย ไร้ความกังวล</p>
+          </div>
+        </div>
+        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">1,800 – 2,500</span>
+          <div>
+            <strong class="text-amber-300">เริ่มเฝ้าระวัง & เตรียมตัวล่วงหน้า 48 ชม.</strong>
+            <p class="text-slate-400 text-xs mt-0.5">ชุมชนนอกแนวคันกั้นน้ำริมเจ้าพระยา (ทั้งปริมณฑลและ กทม. 16 ชุมชน) น้ำเริ่มปริ่มตลิ่ง ต้องเตรียมยกของขึ้นที่สูง</p>
+          </div>
+        </div>
+        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 whitespace-nowrap">&gt; 3,000 cms</span>
+          <div>
+            <strong class="text-rose-400">สัญญาณวิกฤตสูงสุด (ความเสี่ยงปี 2554)</strong>
+            <p class="text-slate-400 text-xs mt-0.5">ปริมาณน้ำเกินขีดรับน้ำของคันกั้นน้ำ กทม. ชั้นใน เสี่ยงเกิดน้ำล้นตลิ่งและท่วมขังเป็นวงกว้าง</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-Factor Formula Card -->
+      <div class="mt-4 p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+        <div class="font-bold text-cyan-300 mb-1">⚡ สูตรน้ำท่วม กทม. "3 ประสาน" (The 3-Factor Formula):</div>
+        <p class="text-slate-300">น้ำท่วม กทม. มักเกิดจาก 3 ตัวแปรมาชนกันในเดือน <strong>ตุลาคม</strong>: <br>
+        (1) น้ำเหนือระบายเกิน 2,000 cms + (2) ฝนตกสะสมในพื้นที่ &gt; 60 มม. + (3) น้ำทะเลหนุนสูงในอ่าวไทย (> 1.7 ม.รทก.) ทำให้น้ำไหลลงทะเลไม่ได้</p>
+      </div>
+    </section>
+
+    <!-- SECTION 4: ACTION CHECKLIST -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-3 flex items-center gap-2">
+        <span>✅</span> สิ่งที่ต้องทำเมื่อตัวเลขแตะสีเหลือง/ส้ม (Action Checklist)
+      </h2>
+      <ul class="space-y-2 text-xs text-slate-300">
+        <li class="flex items-center gap-2">
+          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+          <span>ตรวจสอบปลั๊กไฟและสวิตช์เครื่องใช้ไฟฟ้าชั้นล่าง</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+          <span>วางแผนจุดจอดรถยนต์สำรองบนที่สูง (หากพักอาศัยในจุดเสี่ยงริมน้ำ)</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+          <span>ตรวจสอบปั๊มน้ำไดโว่และท่อระบายน้ำรอบบ้านว่าไม่อุดตัน</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+          <span>สำรองน้ำดื่มและยาประจำตัวสำหรับ 3–5 วัน</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Footer Links -->
+    <footer class="text-center text-xs text-slate-500 pt-4 border-t border-slate-900">
+      <div class="flex justify-center gap-4 mb-2">
+        <a href="https://waterchart.thaiwater.net/basin/chaophraya" target="_blank" class="hover:text-cyan-400 transition">ผังน้ำ ThaiWater</a>
+        <a href="https://wmsc.rid.go.th" target="_blank" class="hover:text-cyan-400 transition">กรมชลประทาน SWOC</a>
+        <a href="https://weather.bangkok.go.th/Radar/" target="_blank" class="hover:text-cyan-400 transition">เรดาร์ กทม.</a>
+      </div>
+      <p>จัดทำโดย myPKA Automation • แหล่งข้อมูล: สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) & กรมชลประทาน</p>
+    </footer>
+
+  </div>
+</body>
+</html>

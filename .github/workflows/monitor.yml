@@ -1,0 +1,50 @@
+name: Daily Flood Monitor & Alert
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 00:00 UTC = 07:00 AM ICT (Bangkok Time)
+  workflow_dispatch:      # Allows manual trigger via GitHub Web UI or mobile app
+
+# Permissions for deploying to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Flood Monitor & Alert
+        env:
+          LINE_FLOOD_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_FLOOD_CHANNEL_ACCESS_TOKEN }}
+          LINE_FLOOD_GROUP_ID: ${{ secrets.LINE_FLOOD_GROUP_ID }}
+        run: |
+          python3 monitor.py --run
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './web'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
