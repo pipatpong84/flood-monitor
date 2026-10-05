@@ -74,6 +74,7 @@ def fetch_thaiwater_data() -> dict:
     c2_flow = 0.0
     c13_flow = 0.0
     s26_flow = 0.0
+    c35_flow = 0.0
     data_time = ""
 
     for it in items:
@@ -94,10 +95,16 @@ def fetch_thaiwater_data() -> dict:
                     data_time = it.get("waterlevel_datetime", "")
             elif code == "S.26":
                 s26_flow = flow
+            elif code == "C.35":
+                c35_flow = flow
 
     # Estimate C.29B (Pathum Thani / Bang Sai) flow:
-    # Hydrological convergence: Chao Phraya (C.13) + Pasak (S.26) + intermediate sideflow (~100-200 cms)
-    c29b_flow = c13_flow + s26_flow + 150.0 if (c13_flow > 0 and s26_flow > 0) else (c13_flow * 1.07)
+    # Hydrological convergence: Chao Phraya Ayutthaya (C.35) + Pasak (S.26) + intermediate sideflow (~50 cms)
+    # If C.35 is missing, fallback to (C.13 * 0.60) + S.26 + 50.0
+    if c35_flow > 0:
+        c29b_flow = c35_flow + s26_flow + 50.0
+    else:
+        c29b_flow = (c13_flow * 0.60) + s26_flow + 50.0
 
     # Process Bangkok rainfall (14 official stations)
     rain_items = rain_data.get("data", [])
@@ -132,18 +139,18 @@ def fetch_thaiwater_data() -> dict:
             "unit": "cms"
         },
         "c29b": {
-            "name": "C.29B ปทุมธานี",
-            "desc": "ด่านหน้าก่อนเข้า กทม. (บางไทร/สามโคก)",
+            "name": "C.29B ปทุมธานี [ประเมิน C.35+S.26]",
+            "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา + S.26 ป่าสัก)",
             "flow": round(c29b_flow, 1),
             "max": 3500.0,
             "unit": "cms"
         },
         "rain": {
-            "name": "เรดาร์ฝน กทม.",
-            "desc": "ปริมาณฝนสูงสุดในเขต กทม. (เกณฑ์ท่วมขัง > 60 มม./ชม.)",
+            "name": "เรดาร์ฝน กทม. (สะสม 24 ชม.)",
+            "desc": "ปริมาณฝนสะสม 24 ชม. สูงสุด (ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.)",
             "rate": round(max_rain, 1),
-            "max": 60.0,
-            "unit": "มม./ชม."
+            "max": 300.0,
+            "unit": "มม."
         }
     }
 
@@ -198,8 +205,8 @@ def get_live_hydrological_data() -> dict:
         "is_cached": True,
         "c2": {"name": "C.2 นครสวรรค์", "desc": "รับน้ำเหนือ", "flow": 2023.0, "max": 3500.0, "unit": "cms"},
         "c13": {"name": "C.13 เขื่อนเจ้าพระยา", "desc": "ท้ายเขื่อนชัยนาท", "flow": 2500.0, "max": 3000.0, "unit": "cms"},
-        "c29b": {"name": "C.29B ปทุมธานี", "desc": "ด่านหน้า กทม.", "flow": 2675.0, "max": 3500.0, "unit": "cms"},
-        "rain": {"name": "เรดาร์ฝน กทม.", "desc": "ปริมาณฝน กทม.", "rate": 0.0, "max": 60.0, "unit": "มม./ชม."}
+        "c29b": {"name": "C.29B ปทุมธานี [ประเมิน C.35+S.26]", "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา + S.26 ป่าสัก)", "flow": 2220.0, "max": 3500.0, "unit": "cms"},
+        "rain": {"name": "เรดาร์ฝน กทม. (สะสม 24 ชม.)", "desc": "ปริมาณฝนสะสม 24 ชม. สูงสุด (ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.)", "rate": 0.0, "max": 300.0, "unit": "มม."}
     }
 
 
@@ -209,6 +216,14 @@ def get_live_hydrological_data() -> dict:
 
 def get_station_status(flow_val: float, station_id: str) -> tuple:
     """Return (color_hex, badge_tag, badge_bg, subtext) based on hydrological thresholds."""
+    if station_id == "c29b":
+        if flow_val < 2500:
+            return "#10B981", "🟢 ปกติ", "#ECFDF5", "ต่ำกว่าคันกั้นน้ำ กทม. >1,000 cms • กทม. ชั้นในปลอดภัย"
+        elif flow_val < 3000:
+            return "#F59E0B", "🟡 เฝ้าระวัง", "#FEF3C7", "เริ่มกระทบชุมชนนอกคัน • คันกั้นน้ำ กทม. ชั้นในยังรับมือได้"
+        else:
+            return "#EF4444", "🔴 วิกฤต", "#FEE2E2", "ใกล้แตะขีดจำกัดคันกั้นน้ำ (3,500 cms) • กทม. เสี่ยงน้ำท่วมใหญ่"
+
     if flow_val < 1800:
         color = "#10B981"  # Emerald Green
         tag = "🟢 ปกติ"
@@ -239,21 +254,21 @@ def get_station_status(flow_val: float, station_id: str) -> tuple:
 
 def get_rain_status(rain_val: float) -> tuple:
     """Return (color_hex, badge_tag, badge_bg, subtext) based on rainfall thresholds."""
-    if rain_val < 15.0:
+    if rain_val < 60.0:
         color = "#10B981"
         tag = "🟢 ปกติ"
         tag_bg = "#ECFDF5"
-        subtext = "ระบายน้ำคล่องตัว • ยังไม่พบกลุ่มฝนหนักในพื้นที่"
-    elif rain_val < 40.0:
+        subtext = "ต่ำกว่าขีดระบาย กทม. (60 มม.) • สถิติน้ำท่วมใหญ่ปลาย ก.ย. 300 มม."
+    elif rain_val < 150.0:
         color = "#F59E0B"
         tag = "🟡 เฝ้าระวัง"
         tag_bg = "#FEF3C7"
-        subtext = "ฝนปานกลาง • เฝ้าระวังจุดเสี่ยงลุ่มต่ำและพื้นที่ฝั่งตะวันออก"
+        subtext = "เกินขีดระบาย กทม. (60 มม.) เริ่มมีน้ำขังบนถนน • สถิติน้ำท่วมใหญ่ 300 มม."
     else:
         color = "#EF4444"
         tag = "🔴 วิกฤต"
         tag_bg = "#FEE2E2"
-        subtext = "ฝนตกหนักเกินขีดระบาย กทม. (60 มม./ชม.) • น้ำขังบนถนนทันที"
+        subtext = "ฝนตกหนักสะสมรุนแรง • ระดับวิกฤตใกล้เคียงน้ำท่วมใหญ่ปลาย ก.ย. (300 มม.)"
     return color, tag, tag_bg, subtext
 
 
@@ -265,9 +280,11 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
     """
     Decide whether to dispatch a LINE notification.
     Rules:
+    - Force flag (--force-alert) -> Alert
+    - C.29B >= 2,800 cms -> Alert
+    - Rain >= 60.0 mm -> Alert
     - C.13 >= 1,800 cms -> Alert
     - C.2 >= 2,200 cms -> Alert
-    - Rain >= 30 mm/hr -> Alert
     - Sunday morning heartbeat (08:00 AM) -> Alert
     - Otherwise -> Silent (exit 0)
     """
@@ -278,19 +295,23 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
 
     c13_val = data["c13"]["flow"]
     c2_val = data["c2"]["flow"]
+    c29b_val = data["c29b"]["flow"]
     rain_val = data["rain"]["rate"]
 
     if force:
         return True, "⚡ Manual Dispatch: สั่งส่งแจ้งเตือนด้วยคำสั่งตรง (--force-alert)"
+
+    if c29b_val >= 2800:
+        return True, f"⚠️ ด่านหน้า กทม. (C.29B) แตะเกณฑ์เฝ้าระวัง: {c29b_val:,.0f} cms (>= 2,800)"
+
+    if rain_val >= 60.0:
+        return True, f"🌧️ ฝนสะสม 24 ชม. กทม. เกินขีดระบายน้ำ: {rain_val:.1f} มม. (>= 60 มม. เสี่ยงน้ำท่วมขัง)"
 
     if c13_val >= 1800:
         return True, f"⚠️ เขื่อนเจ้าพระยาระบายน้ำแตะเกณฑ์เฝ้าระวัง: {c13_val:,.0f} cms (>= 1,800)"
 
     if c2_val >= 2200:
         return True, f"⚠️ น้ำเหนือนครสวรรค์สะสมสูง: {c2_val:,.0f} cms (มีผลต่อเขื่อนเจ้าพระยาใน 48 ชม.)"
-
-    if rain_val >= 30.0:
-        return True, f"🌧️ ฝนตกหนัก กทม.: {rain_val:.1f} มม./ชม. เสี่ยงน้ำท่วมขังบนผิวจราจร"
 
     if is_sunday:
         return True, "🟢 รายงานประจำสัปดาห์ (Sunday Heartbeat): ระบบตรวจวัดทำงานปกติ สถานการณ์น้ำยังปลอดภัย"
@@ -324,45 +345,48 @@ def build_scale_bar_flex(pct: float, color: str) -> dict:
     }
 
 
-def make_card_item_flex(name: str, val_str: str, max_val: float, unit: str, color: str, subtext: str, pct: float) -> dict:
+def make_card_item_flex(name: str, val_str: str, max_val: float, unit: str, color: str, subtext: str, pct: float, benchmark_row: dict = None) -> dict:
+    contents = [
+        {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": name,
+                    "size": "sm",
+                    "weight": "bold",
+                    "color": "#0F172A",
+                    "flex": 5
+                },
+                {
+                    "type": "text",
+                    "text": f"{val_str} / {max_val:,.0f} {unit}",
+                    "size": "sm",
+                    "weight": "bold",
+                    "color": color,
+                    "align": "end",
+                    "flex": 5
+                }
+            ]
+        },
+        build_scale_bar_flex(pct, color)
+    ]
+    if benchmark_row:
+        contents.append(benchmark_row)
+    contents.append({
+        "type": "text",
+        "text": subtext,
+        "size": "xxs",
+        "color": "#64748B",
+        "wrap": True
+    })
     return {
         "type": "box",
         "layout": "vertical",
         "margin": "md",
         "spacing": "xs",
-        "contents": [
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": name,
-                        "size": "sm",
-                        "weight": "bold",
-                        "color": "#0F172A",
-                        "flex": 5
-                    },
-                    {
-                        "type": "text",
-                        "text": f"{val_str} / {max_val:,.0f} {unit}",
-                        "size": "sm",
-                        "weight": "bold",
-                        "color": color,
-                        "align": "end",
-                        "flex": 5
-                    }
-                ]
-            },
-            build_scale_bar_flex(pct, color),
-            {
-                "type": "text",
-                "text": subtext,
-                "size": "xxs",
-                "color": "#64748B",
-                "wrap": True
-            }
-        ]
+        "contents": contents
     }
 
 
@@ -377,6 +401,36 @@ def build_line_flex_payload(data: dict, trigger_reason: str) -> dict:
     c13_pct = (data["c13"]["flow"] / data["c13"]["max"]) * 100.0
     c29b_pct = (data["c29b"]["flow"] / data["c29b"]["max"]) * 100.0
     r_pct = (data["rain"]["rate"] / data["rain"]["max"]) * 100.0
+
+    rain_benchmark_row = {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+            {
+                "type": "text",
+                "text": "0",
+                "size": "xxs",
+                "color": "#94A3B8",
+                "flex": 1
+            },
+            {
+                "type": "text",
+                "text": "▲ รับได้ 60 มม.",
+                "size": "xxs",
+                "color": "#0284C7",
+                "align": "center",
+                "flex": 2
+            },
+            {
+                "type": "text",
+                "text": "300 มม. (วิกฤต)",
+                "size": "xxs",
+                "color": "#EF4444",
+                "align": "end",
+                "flex": 2
+            }
+        ]
+    }
 
     bubble = {
         "type": "bubble",
@@ -450,7 +504,7 @@ def build_line_flex_payload(data: dict, trigger_reason: str) -> dict:
                     "color": "#475569",
                     "margin": "md"
                 },
-                make_card_item_flex(data["rain"]["name"], f"{data['rain']['rate']:.1f}", data["rain"]["max"], "มม./ชม.", r_col, f"{r_tag}: {r_sub}", r_pct)
+                make_card_item_flex(data["rain"]["name"], f"{data['rain']['rate']:.1f}", data["rain"]["max"], data["rain"]["unit"], r_col, f"{r_tag}: {r_sub}", r_pct, benchmark_row=rain_benchmark_row)
             ]
         },
         "footer": {
@@ -680,20 +734,28 @@ def compile_dashboard_html(data: dict) -> str:
           <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display flex items-center gap-2">
             <span>🌧️</span> ปริมาณฝนเฉพาะหน้า (กทม.)
           </h2>
-          <span class="text-[11px] text-slate-500">เกณฑ์ท่วมขัง: > 60 มม./ชม.</span>
+          <span class="text-[11px] text-slate-500">ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.</span>
         </div>
         <div class="flex justify-between items-baseline mb-1">
           <div>
             <span class="font-bold text-white text-sm sm:text-base">{data["rain"]["name"]}</span>
-            <span class="text-xs text-slate-400 ml-1">(เซนเซอร์ 50 เขต)</span>
+            <span class="text-xs text-slate-400 ml-1">({data["rain"]["desc"]})</span>
           </div>
           <div class="text-right">
             <span class="font-bold text-base sm:text-lg font-display" style="color: {r_col};">{data["rain"]["rate"]:.1f}</span>
-            <span class="text-xs text-slate-500">/ {data["rain"]["max"]:.1f} มม./ชม.</span>
+            <span class="text-xs text-slate-500">/ {data["rain"]["max"]:,.0f} {data["rain"]["unit"]}</span>
           </div>
         </div>
-        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+        <div class="relative w-full bg-slate-800 rounded-full h-2.5 my-1">
           <div class="h-full rounded-full transition-all duration-500" style="width: {r_pct:.1f}%; background-color: {r_col};"></div>
+          <!-- Visual threshold pin at 20% (60mm) -->
+          <div class="absolute -top-1 -bottom-1 left-[20%] w-0.5 bg-amber-400 rounded-full shadow-[0_0_6px_rgba(251,191,36,0.8)] z-10"></div>
+        </div>
+        <!-- Benchmark marker labels row -->
+        <div class="relative w-full text-[10px] text-slate-400 h-4 mb-1">
+          <span class="absolute left-0 text-slate-500">0</span>
+          <span class="absolute left-[20%] -translate-x-2 text-amber-400 font-semibold">▲ ขีดรับน้ำ กทม. (60 มม.)</span>
+          <span class="absolute right-0 text-slate-400">300 มม. (สถิติน้ำท่วมใหญ่)</span>
         </div>
         <div class="flex justify-between items-center text-[11px] mt-1.5">
           <span class="text-slate-400">{r_sub}</span>
