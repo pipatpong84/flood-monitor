@@ -281,26 +281,34 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
     Decide whether to dispatch a LINE notification.
     Rules:
     - Force flag (--force-alert) -> Alert
-    - C.29B >= 2,800 cms -> Alert
-    - Rain >= 60.0 mm -> Alert
-    - C.13 >= 1,800 cms -> Alert
-    - C.2 >= 2,200 cms -> Alert
-    - Sunday morning heartbeat (08:00 AM) -> Alert
+    - Emergency Thresholds (Active 365 Days / All Year round):
+      - C.29B >= 2,800 cms -> Alert
+      - Rain >= 60.0 mm -> Alert
+      - C.13 >= 1,800 cms -> Alert
+      - C.2 >= 2,200 cms -> Alert
+    - Seasonal Sunday Heartbeat (Option 1: Seasonal Sentinel):
+      - Only active during Peak Flood Season: August to November (Months 8, 9, 10, 11)
+      - Kickoff: First Sunday of August
+      - Wrap-up: Last Sunday of November
+      - Off-season (Dec - Jul): Silent on Sundays to eliminate noise (0 messages)
     - Otherwise -> Silent (exit 0)
     """
     now = datetime.datetime.now()
     is_sunday = (now.weekday() == 6) # 6 = Sunday
     month = now.month
-    is_peak_season = (month in [8, 9, 10])
+    day = now.day
+    is_peak_season = (month in [8, 9, 10, 11])
 
     c13_val = data["c13"]["flow"]
     c2_val = data["c2"]["flow"]
     c29b_val = data["c29b"]["flow"]
     rain_val = data["rain"]["rate"]
 
+    # 1. Manual Force Override
     if force:
         return True, "⚡ Manual Dispatch: สั่งส่งแจ้งเตือนด้วยคำสั่งตรง (--force-alert)"
 
+    # 2. Emergency Thresholds (Active 365 Days / All Year round)
     if c29b_val >= 2800:
         return True, f"⚠️ ด่านหน้า กทม. (C.29B) แตะเกณฑ์เฝ้าระวัง: {c29b_val:,.0f} cms (>= 2,800)"
 
@@ -313,8 +321,20 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
     if c2_val >= 2200:
         return True, f"⚠️ น้ำเหนือนครสวรรค์สะสมสูง: {c2_val:,.0f} cms (มีผลต่อเขื่อนเจ้าพระยาใน 48 ชม.)"
 
-    if is_sunday:
-        return True, "🟢 รายงานประจำสัปดาห์ (Sunday Heartbeat): ระบบตรวจวัดทำงานปกติ สถานการณ์น้ำยังปลอดภัย"
+    # 3. Seasonal Sunday Heartbeat (Only active during August - November)
+    if is_peak_season and is_sunday:
+        # First Sunday of August (Kickoff)
+        if month == 8 and day <= 7:
+            return True, "🔔 เริ่มต้นฤดูเฝ้าระวังน้ำหลาก (ส.ค. - พ.ย.): ระบบ Flood Monitor เริ่มรายงานสรุปทุกเช้าวันอาทิตย์ และเตือนทันทีเมื่อแตะเกณฑ์"
+        # Last Sunday of November (Wrap-up)
+        elif month == 11 and day >= 24:
+            return True, "🍃 สิ้นสุดฤดูเฝ้าระวังน้ำหลากประจำปี: สถานการณ์ปลอดภัย ระบบเข้าสู่โหมดเฝ้าระวังเงียบ (Silent Mode) พบกันใหม่สิงหาคมปีหน้า"
+        else:
+            return True, "🟢 รายงานประจำสัปดาห์ (Sunday Heartbeat): ระบบตรวจวัดทำงานปกติ สถานการณ์น้ำยังปลอดภัย"
+
+    # Off-season Sundays: Silent mode
+    if not is_peak_season and is_sunday:
+        return False, "ช่วงนอกฤดูน้ำหลาก (ธ.ค. - ก.ค.): โหมดเฝ้าระวังเงียบ (Silent Mode) ไม่ส่ง Heartbeat รบกวนกลุ่มไลน์"
 
     return False, "สภาวะน้ำปกติ อยู่ต่ำกว่าเกณฑ์เฝ้าระวัง (Alert by Exception: ไม่รบกวนกลุ่มไลน์)"
 
