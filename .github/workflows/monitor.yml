@@ -2,7 +2,7 @@ name: Daily Flood Monitor & Alert
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 00:00 UTC = 07:00 AM ICT (Bangkok Time)
+    - cron: '45 2 * * *'  # 02:45 UTC = 09:45 AM ICT (Bangkok Time)
   workflow_dispatch:      # Allows manual trigger via GitHub Web UI or mobile app
   push:
     branches:
