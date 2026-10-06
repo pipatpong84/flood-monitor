@@ -622,7 +622,7 @@ def compile_dashboard_html(data: dict) -> str:
         cached_badge = '<div class="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-2 rounded-lg text-xs mb-4">⚠️ ข้อมูลชั่วคราว: เซิร์ฟเวอร์ต้นทางไม่ตอบสนอง กำลังแสดงข้อมูลล่าสุดที่มีในแคช</div>'
 
     html = f"""<!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -633,7 +633,6 @@ def compile_dashboard_html(data: dict) -> str:
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {{
-      darkMode: 'class',
       theme: {{
         extend: {{
           fontFamily: {{
@@ -641,10 +640,11 @@ def compile_dashboard_html(data: dict) -> str:
             display: ['Plus Jakarta Sans', 'Sarabun', 'sans-serif']
           }},
           colors: {{
-            slate: {{
-              850: '#0F172A',
-              900: '#0B1120',
-              950: '#020617'
+            aquatic: {{
+              mist: '#EEF3F5',
+              card: '#FFFFFF',
+              deep: '#0B1C27',
+              accent: '#1F6F99'
             }}
           }}
         }}
@@ -652,7 +652,7 @@ def compile_dashboard_html(data: dict) -> str:
     }}
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white">
+<body class="bg-[#EEF3F5] text-slate-800 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white">
 
   <!-- Main Container -->
   <div class="max-w-3xl mx-auto px-4 py-8">
@@ -660,16 +660,16 @@ def compile_dashboard_html(data: dict) -> str:
     <!-- Top Header -->
     <header class="mb-6">
       <div class="flex items-center justify-between gap-2 mb-2">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase tracking-wider font-display">
-          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-sky-700 border border-sky-200/80 uppercase tracking-wider font-display shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           Live Monitoring
         </span>
-        <span class="text-xs text-slate-400">อัปเดต: {data["timestamp"]}</span>
+        <span class="text-xs text-slate-500 font-medium">อัปเดต: {data["timestamp"]}</span>
       </div>
-      <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-white mb-1">
+      <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-slate-900 mb-1">
         สถานการณ์น้ำ & เฝ้าระวังน้ำท่วม
       </h1>
-      <p class="text-sm text-slate-400">
+      <p class="text-sm text-slate-500">
         ลุ่มน้ำเจ้าพระยา & กรุงเทพมหานคร • แดชบอร์ด & คู่มือประเมินความเสี่ยงกันลืม
       </p>
     </header>
@@ -677,210 +677,213 @@ def compile_dashboard_html(data: dict) -> str:
     {cached_badge}
 
     <!-- SECTION 1: LIVE DATA METRICS -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8 shadow-xl">
-      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display flex items-center gap-2">
+    <section class="bg-white border border-slate-200/80 rounded-2xl p-6 mb-6 shadow-sm">
+      <div class="flex items-center justify-between pb-3 mb-5 border-b border-slate-100">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-display flex items-center gap-2">
           <span>🌊</span> อัตราการไหลของน้ำ (3 สถานีหลัก)
         </h2>
-        <span class="text-[11px] text-slate-500">หน่วย: ลบ.ม./วินาที (cms)</span>
+        <span class="text-[11px] text-slate-400 font-medium">หน่วย: ลบ.ม./วินาที (cms)</span>
       </div>
 
       <!-- Station 1: C.2 -->
       <div class="mb-5">
-        <div class="flex justify-between items-baseline mb-1">
+        <div class="flex justify-between items-baseline mb-1.5">
           <div>
-            <span class="font-bold text-white text-sm sm:text-base">{data["c2"]["name"]}</span>
-            <span class="text-xs text-slate-400 ml-1">({data["c2"]["desc"]})</span>
+            <span class="font-bold text-slate-900 text-sm sm:text-base">{data["c2"]["name"]}</span>
+            <span class="text-xs text-slate-500 ml-1">({data["c2"]["desc"]})</span>
           </div>
           <div class="text-right">
             <span class="font-bold text-base sm:text-lg font-display" style="color: {c2_col};">{data["c2"]["flow"]:,.0f}</span>
-            <span class="text-xs text-slate-500">/ {data["c2"]["max"]:,.0f} cms</span>
+            <span class="text-xs text-slate-400">/ {data["c2"]["max"]:,.0f} cms</span>
           </div>
         </div>
-        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div class="h-full rounded-full transition-all duration-500" style="width: {c2_pct:.1f}%; background-color: {c2_col};"></div>
         </div>
         <div class="flex justify-between items-center text-[11px] mt-1.5">
-          <span class="text-slate-400">{c2_sub}</span>
-          <span class="font-semibold" style="color: {c2_col};">{c2_tag}</span>
+          <span class="text-slate-500">{c2_sub}</span>
+          <span class="font-semibold px-2 py-0.5 rounded text-[10px]" style="color: {c2_col}; background-color: {c2_bg};">{c2_tag}</span>
         </div>
       </div>
 
       <!-- Station 2: C.13 -->
       <div class="mb-5">
-        <div class="flex justify-between items-baseline mb-1">
+        <div class="flex justify-between items-baseline mb-1.5">
           <div>
-            <span class="font-bold text-white text-sm sm:text-base">{data["c13"]["name"]}</span>
-            <span class="text-xs text-slate-400 ml-1">({data["c13"]["desc"]})</span>
+            <span class="font-bold text-slate-900 text-sm sm:text-base">{data["c13"]["name"]}</span>
+            <span class="text-xs text-slate-500 ml-1">({data["c13"]["desc"]})</span>
           </div>
           <div class="text-right">
             <span class="font-bold text-base sm:text-lg font-display" style="color: {c13_col};">{data["c13"]["flow"]:,.0f}</span>
-            <span class="text-xs text-slate-500">/ {data["c13"]["max"]:,.0f} cms</span>
+            <span class="text-xs text-slate-400">/ {data["c13"]["max"]:,.0f} cms</span>
           </div>
         </div>
-        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div class="h-full rounded-full transition-all duration-500" style="width: {c13_pct:.1f}%; background-color: {c13_col};"></div>
         </div>
         <div class="flex justify-between items-center text-[11px] mt-1.5">
-          <span class="text-slate-400">{c13_sub}</span>
-          <span class="font-semibold" style="color: {c13_col};">{c13_tag}</span>
+          <span class="text-slate-500">{c13_sub}</span>
+          <span class="font-semibold px-2 py-0.5 rounded text-[10px]" style="color: {c13_col}; background-color: {c13_bg};">{c13_tag}</span>
         </div>
       </div>
 
       <!-- Station 3: C.29B -->
       <div class="mb-6">
-        <div class="flex justify-between items-baseline mb-1">
+        <div class="flex justify-between items-baseline mb-1.5">
           <div>
-            <span class="font-bold text-white text-sm sm:text-base">{data["c29b"]["name"]}</span>
-            <span class="text-xs text-slate-400 ml-1">({data["c29b"]["desc"]})</span>
+            <span class="font-bold text-slate-900 text-sm sm:text-base">{data["c29b"]["name"]}</span>
+            <span class="text-xs text-slate-500 ml-1">({data["c29b"]["desc"]})</span>
           </div>
           <div class="text-right">
             <span class="font-bold text-base sm:text-lg font-display" style="color: {c29b_col};">{data["c29b"]["flow"]:,.0f}</span>
-            <span class="text-xs text-slate-500">/ {data["c29b"]["max"]:,.0f} cms</span>
+            <span class="text-xs text-slate-400">/ {data["c29b"]["max"]:,.0f} cms</span>
           </div>
         </div>
-        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div class="h-full rounded-full transition-all duration-500" style="width: {c29b_pct:.1f}%; background-color: {c29b_col};"></div>
         </div>
         <div class="flex justify-between items-center text-[11px] mt-1.5">
-          <span class="text-slate-400">{c29b_sub}</span>
-          <span class="font-semibold" style="color: {c29b_col};">{c29b_tag}</span>
+          <span class="text-slate-500">{c29b_sub}</span>
+          <span class="font-semibold px-2 py-0.5 rounded text-[10px]" style="color: {c29b_col}; background-color: {c29b_bg};">{c29b_tag}</span>
         </div>
       </div>
 
       <!-- Rainfall Section -->
-      <div class="pt-4 border-t border-slate-800">
+      <div class="pt-5 border-t border-slate-100">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display flex items-center gap-2">
+          <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-display flex items-center gap-2">
             <span>🌧️</span> ปริมาณฝนเฉพาะหน้า (กทม.)
           </h2>
-          <span class="text-[11px] text-slate-500">ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.</span>
+          <span class="text-[11px] text-slate-400 font-medium">ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.</span>
         </div>
-        <div class="flex justify-between items-baseline mb-1">
+        <div class="flex justify-between items-baseline mb-1.5">
           <div>
-            <span class="font-bold text-white text-sm sm:text-base">{data["rain"]["name"]}</span>
-            <span class="text-xs text-slate-400 ml-1">({data["rain"]["desc"]})</span>
+            <span class="font-bold text-slate-900 text-sm sm:text-base">{data["rain"]["name"]}</span>
+            <span class="text-xs text-slate-500 ml-1">({data["rain"]["desc"]})</span>
           </div>
           <div class="text-right">
             <span class="font-bold text-base sm:text-lg font-display" style="color: {r_col};">{data["rain"]["rate"]:.1f}</span>
-            <span class="text-xs text-slate-500">/ {data["rain"]["max"]:,.0f} {data["rain"]["unit"]}</span>
+            <span class="text-xs text-slate-400">/ {data["rain"]["max"]:,.0f} {data["rain"]["unit"]}</span>
           </div>
         </div>
-        <div class="relative w-full bg-slate-800 rounded-full h-2.5 my-1">
+        <div class="relative w-full bg-slate-100 rounded-full h-2.5 my-1.5">
           <div class="h-full rounded-full transition-all duration-500" style="width: {r_pct:.1f}%; background-color: {r_col};"></div>
           <!-- Visual threshold pin at 20% (60mm) -->
-          <div class="absolute -top-1 -bottom-1 left-[20%] w-0.5 bg-amber-400 rounded-full shadow-[0_0_6px_rgba(251,191,36,0.8)] z-10"></div>
+          <div class="absolute -top-1 -bottom-1 left-[20%] w-0.5 bg-amber-500 rounded-full shadow-[0_0_6px_rgba(245,158,11,0.6)] z-10"></div>
         </div>
         <!-- Benchmark marker labels row -->
         <div class="relative w-full text-[10px] text-slate-400 h-4 mb-1">
-          <span class="absolute left-0 text-slate-500">0</span>
-          <span class="absolute left-[20%] -translate-x-2 text-amber-400 font-semibold">▲ ขีดรับน้ำ กทม. (60 มม.)</span>
-          <span class="absolute right-0 text-slate-400">300 มม. (สถิติน้ำท่วมใหญ่)</span>
+          <span class="absolute left-0">0</span>
+          <span class="absolute left-[20%] -translate-x-2 text-amber-600 font-semibold">▲ ขีดรับน้ำ กทม. (60 มม.)</span>
+          <span class="absolute right-0">300 มม. (สถิติน้ำท่วมใหญ่)</span>
         </div>
         <div class="flex justify-between items-center text-[11px] mt-1.5">
-          <span class="text-slate-400">{r_sub}</span>
-          <span class="font-semibold" style="color: {r_col};">{r_tag}</span>
+          <span class="text-slate-500">{r_sub}</span>
+          <span class="font-semibold px-2 py-0.5 rounded text-[10px]" style="color: {r_col}; background-color: {r_bg};">{r_tag}</span>
         </div>
       </div>
     </section>
 
     <!-- SECTION 2: 72H VISUAL RIVER FLOW -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
+    <section class="bg-white border border-slate-200/80 rounded-2xl p-6 mb-6 shadow-sm">
+      <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
         <span>🗺️</span> แผนผังเส้นทางน้ำ & เวลาเดินทาง (72-Hour Horizon)
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center text-xs">
-        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-          <div class="text-cyan-400 font-bold mb-1">C.2 นครสวรรค์</div>
-          <div class="text-[11px] text-slate-400">รับน้ำ ปิง วัง ยม น่าน</div>
-          <div class="mt-2 text-[10px] text-amber-400 font-mono">เดินทาง ~48 ชม. ↓</div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70">
+          <div class="text-sky-700 font-bold mb-1">C.2 นครสวรรค์</div>
+          <div class="text-[11px] text-slate-500">รับน้ำ ปิง วัง ยม น่าน</div>
+          <div class="mt-2 text-[10px] text-amber-600 font-mono font-medium">เดินทาง ~48 ชม. ↓</div>
         </div>
-        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-          <div class="text-cyan-400 font-bold mb-1">C.13 เขื่อนเจ้าพระยา</div>
-          <div class="text-[11px] text-slate-400">จุดชี้ชะตาระบายน้ำ</div>
-          <div class="mt-2 text-[10px] text-amber-400 font-mono">เดินทาง ~24 ชม. ↓</div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70">
+          <div class="text-sky-700 font-bold mb-1">C.13 เขื่อนเจ้าพระยา</div>
+          <div class="text-[11px] text-slate-500">จุดชี้ชะตาระบายน้ำ</div>
+          <div class="mt-2 text-[10px] text-amber-600 font-mono font-medium">เดินทาง ~24 ชม. ↓</div>
         </div>
-        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-          <div class="text-cyan-400 font-bold mb-1">C.29B ปทุมธานี</div>
-          <div class="text-[11px] text-slate-400">ด่านหน้าก่อนเข้า กทม.</div>
-          <div class="mt-2 text-[10px] text-emerald-400 font-mono">แนวป้องกันชั้นใน ↓</div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70">
+          <div class="text-sky-700 font-bold mb-1">C.29B ปทุมธานี</div>
+          <div class="text-[11px] text-slate-500">ด่านหน้าก่อนเข้า กทม.</div>
+          <div class="mt-2 text-[10px] text-emerald-600 font-mono font-medium">แนวป้องกันชั้นใน ↓</div>
         </div>
-        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-          <div class="text-cyan-400 font-bold mb-1">กทม. & อ่าวไทย</div>
-          <div class="text-[11px] text-slate-400">รับน้ำเหนือ + ทะเลหนุน</div>
-          <div class="mt-2 text-[10px] text-slate-400 font-mono">ออกสู่ทะเล</div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70">
+          <div class="text-sky-700 font-bold mb-1">กทม. & อ่าวไทย</div>
+          <div class="text-[11px] text-slate-500">รับน้ำเหนือ + ทะเลหนุน</div>
+          <div class="mt-2 text-[10px] text-slate-400 font-mono font-medium">ออกสู่ทะเล</div>
         </div>
       </div>
     </section>
 
     <!-- SECTION 3: 1-YEAR CHEATSHEET & MAGIC NUMBERS -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
+    <section class="bg-white border border-slate-200/80 rounded-2xl p-6 mb-6 shadow-sm">
+      <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-display mb-4 flex items-center gap-2">
         <span>📖</span> คู่มือจำเกณฑ์ตัดสินใจ (Magic Numbers กันลืม 1 ปี)
       </h2>
       <div class="space-y-3 text-xs sm:text-sm">
-        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
-          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">&lt; 1,800 cms</span>
+        <div class="flex gap-3 items-start bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">&lt; 1,800 cms</span>
           <div>
-            <strong class="text-white">ปลอดภัย 100%</strong>
-            <p class="text-slate-400 text-xs mt-0.5">การระบายน้ำอยู่ในเกณฑ์ปกติ คันกั้นน้ำ กทม. รับน้ำได้สบาย ไร้ความกังวล</p>
+            <strong class="text-slate-900">ปลอดภัย 100%</strong>
+            <p class="text-slate-600 text-xs mt-0.5">การระบายน้ำอยู่ในเกณฑ์ปกติ คันกั้นน้ำ กทม. รับน้ำได้สบาย ไร้ความกังวล</p>
           </div>
         </div>
-        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
-          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">1,800 – 2,500</span>
+        <div class="flex gap-3 items-start bg-amber-50/50 p-3.5 rounded-xl border border-amber-100">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">1,800 – 2,500</span>
           <div>
-            <strong class="text-amber-300">เริ่มเฝ้าระวัง & เตรียมตัวล่วงหน้า 48 ชม.</strong>
-            <p class="text-slate-400 text-xs mt-0.5">ชุมชนนอกแนวคันกั้นน้ำริมเจ้าพระยา (ทั้งปริมณฑลและ กทม. 16 ชุมชน) น้ำเริ่มปริ่มตลิ่ง ต้องเตรียมยกของขึ้นที่สูง</p>
+            <strong class="text-amber-900">เริ่มเฝ้าระวัง & เตรียมตัวล่วงหน้า 48 ชม.</strong>
+            <p class="text-slate-600 text-xs mt-0.5">ชุมชนนอกแนวคันกั้นน้ำริมเจ้าพระยา (ทั้งปริมณฑลและ กทม. 16 ชุมชน) น้ำเริ่มปริ่มตลิ่ง ต้องเตรียมยกของขึ้นที่สูง</p>
           </div>
         </div>
-        <div class="flex gap-3 items-start bg-slate-800/40 p-3 rounded-xl border border-slate-800">
-          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 whitespace-nowrap">&gt; 3,000 cms</span>
+        <div class="flex gap-3 items-start bg-rose-50/50 p-3.5 rounded-xl border border-rose-100">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-rose-100 text-rose-800 border border-rose-200 whitespace-nowrap">&gt; 3,000 cms</span>
           <div>
-            <strong class="text-rose-400">สัญญาณวิกฤตสูงสุด (ความเสี่ยงปี 2554)</strong>
-            <p class="text-slate-400 text-xs mt-0.5">ปริมาณน้ำเกินขีดรับน้ำของคันกั้นน้ำ กทม. ชั้นใน เสี่ยงเกิดน้ำล้นตลิ่งและท่วมขังเป็นวงกว้าง</p>
+            <strong class="text-rose-900">สัญญาณวิกฤตสูงสุด (ความเสี่ยงปี 2554)</strong>
+            <p class="text-slate-600 text-xs mt-0.5">ปริมาณน้ำเกินขีดรับน้ำของคันกั้นน้ำ กทม. ชั้นใน เสี่ยงเกิดน้ำล้นตลิ่งและท่วมขังเป็นวงกว้าง</p>
           </div>
         </div>
       </div>
 
       <!-- 3-Factor Formula Card -->
-      <div class="mt-4 p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
-        <div class="font-bold text-cyan-300 mb-1">⚡ สูตรน้ำท่วม กทม. "3 ประสาน" (The 3-Factor Formula):</div>
-        <p class="text-slate-300">น้ำท่วม กทม. มักเกิดจาก 3 ตัวแปรมาชนกันในเดือน <strong>ตุลาคม</strong>: <br>
-        (1) น้ำเหนือระบายเกิน 2,000 cms + (2) ฝนตกสะสมในพื้นที่ &gt; 60 มม. + (3) น้ำทะเลหนุนสูงในอ่าวไทย (> 1.7 ม.รทก.) ทำให้น้ำไหลลงทะเลไม่ได้</p>
+      <div class="mt-4 p-4 bg-sky-50/70 rounded-xl border border-sky-100 text-xs">
+        <div class="font-bold text-sky-900 mb-1 flex items-center gap-1.5">
+          <span>⚡</span> สูตรน้ำท่วม กทม. "3 ประสาน" (The 3-Factor Formula):
+        </div>
+        <p class="text-slate-700 leading-relaxed">น้ำท่วม กทม. มักเกิดจาก 3 ตัวแปรมาชนกันในเดือน <strong>ตุลาคม</strong>: <br>
+        (1) น้ำเหนือระบายเกิน 2,000 cms + (2) ฝนตกสะสมในพื้นที่ &gt; 60 มม. + (3) น้ำทะเลหนุนสูงในอ่าวไทย (&gt; 1.7 ม.รทก.) ทำให้น้ำไหลลงทะเลไม่ได้</p>
       </div>
     </section>
 
     <!-- SECTION 4: ACTION CHECKLIST -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-8">
-      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-display mb-3 flex items-center gap-2">
+    <section class="bg-white border border-slate-200/80 rounded-2xl p-6 mb-6 shadow-sm">
+      <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-display mb-3 flex items-center gap-2">
         <span>✅</span> สิ่งที่ต้องทำเมื่อตัวเลขแตะสีเหลือง/ส้ม (Action Checklist)
       </h2>
-      <ul class="space-y-2 text-xs text-slate-300">
-        <li class="flex items-center gap-2">
-          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+      <ul class="space-y-2.5 text-xs text-slate-700">
+        <li class="flex items-center gap-2.5">
+          <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
           <span>ตรวจสอบปลั๊กไฟและสวิตช์เครื่องใช้ไฟฟ้าชั้นล่าง</span>
         </li>
-        <li class="flex items-center gap-2">
-          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+        <li class="flex items-center gap-2.5">
+          <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
           <span>วางแผนจุดจอดรถยนต์สำรองบนที่สูง (หากพักอาศัยในจุดเสี่ยงริมน้ำ)</span>
         </li>
-        <li class="flex items-center gap-2">
-          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+        <li class="flex items-center gap-2.5">
+          <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
           <span>ตรวจสอบปั๊มน้ำไดโว่และท่อระบายน้ำรอบบ้านว่าไม่อุดตัน</span>
         </li>
-        <li class="flex items-center gap-2">
-          <input type="checkbox" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+        <li class="flex items-center gap-2.5">
+          <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
           <span>สำรองน้ำดื่มและยาประจำตัวสำหรับ 3–5 วัน</span>
         </li>
       </ul>
     </section>
 
     <!-- Footer Links -->
-    <footer class="text-center text-xs text-slate-500 pt-4 border-t border-slate-900">
+    <footer class="text-center text-xs text-slate-400 pt-4 pb-8 border-t border-slate-200">
       <div class="flex justify-center gap-4 mb-2">
-        <a href="https://waterchart.thaiwater.net/basin/chaophraya" target="_blank" class="hover:text-cyan-400 transition">ผังน้ำ ThaiWater</a>
-        <a href="https://wmsc.rid.go.th" target="_blank" class="hover:text-cyan-400 transition">กรมชลประทาน SWOC</a>
-        <a href="https://weather.bangkok.go.th/Radar/" target="_blank" class="hover:text-cyan-400 transition">เรดาร์ กทม.</a>
+        <a href="https://waterchart.thaiwater.net/basin/chaophraya" target="_blank" class="hover:text-sky-600 transition">ผังน้ำ ThaiWater</a>
+        <a href="https://wmsc.rid.go.th" target="_blank" class="hover:text-sky-600 transition">กรมชลประทาน SWOC</a>
+        <a href="https://weather.bangkok.go.th/Radar/" target="_blank" class="hover:text-sky-600 transition">เรดาร์ กทม.</a>
+        <a href="https://flood.pop.in.th/" target="_blank" class="hover:text-sky-600 transition">POPNIX Flood</a>
       </div>
       <p>จัดทำโดย myPKA Automation • แหล่งข้อมูล: สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) & กรมชลประทาน</p>
     </footer>
