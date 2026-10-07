@@ -1,11 +1,11 @@
 {
   "status": "success",
-  "tier": "Tier 2: POPNIX Flood Open Data (flood.pop.in.th)",
-  "timestamp": "2026-10-07 12:00:00",
+  "tier": "Tier 1: ThaiWater API (api-v3.thaiwater.net)",
+  "timestamp": "2026-10-07 12:00",
   "c2": {
     "name": "C.2 นครสวรรค์",
     "desc": "รับน้ำเหนือ (ค่ายจิรประวัติ)",
-    "flow": 1929.0,
+    "flow": 1933.0,
     "max": 3500.0,
     "unit": "cms"
   },
@@ -17,9 +17,9 @@
     "unit": "cms"
   },
   "c29b": {
-    "name": "C.29B ปทุมธานี [ประเมิน C.35+50]",
-    "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา)",
-    "flow": 1543.0,
+    "name": "C.29B ปทุมธานี [ประเมิน C.35+S.26]",
+    "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา + S.26 ป่าสัก)",
+    "flow": 2288.0,
     "max": 3500.0,
     "unit": "cms"
   },
