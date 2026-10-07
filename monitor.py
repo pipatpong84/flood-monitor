@@ -155,34 +155,140 @@ def fetch_thaiwater_data() -> dict:
     }
 
 
-def fetch_fallback_rid_data() -> dict:
-    """Tier 2: Fallback directly to RID SWOC & BKK Weather endpoints."""
-    print("[2/3] ThaiWater unavailable. Attempting Tier 2 Fallback (RID SWOC)...")
-    # In Tier 2, if primary API times out, scrape or query SWOC report
-    # For now, return standard RID approximation or raise to trigger Tier 3
-    raise RuntimeError("Tier 2 Fallback parsing not yet required; proceeding to Tier 3 Cache.")
+def fetch_fallback_popnix_data() -> dict:
+    """Tier 2: Fallback to POPNIX Flood Open Data (flood.pop.in.th)."""
+    print("[2/3] ThaiWater unavailable. Attempting Tier 2 Fallback (POPNIX Open Data)...")
+    river_url = "https://flood.pop.in.th/api_river.php"
+    rain_url = "https://flood.pop.in.th/api_rain.php"
+
+    river_data = fetch_json(river_url, timeout=12)
+    rain_data = fetch_json(rain_url, timeout=12)
+
+    stations = river_data.get("stations", [])
+    notes = river_data.get("notes", {})
+
+    c2_flow = 0.0
+    c13_flow = 0.0
+    c35_flow = 0.0
+    data_time = ""
+
+    # C.13 from notes.dam_release.v
+    dam_release = notes.get("dam_release", {})
+    if dam_release and dam_release.get("v"):
+        try:
+            c13_flow = float(dam_release.get("v"))
+            data_time = dam_release.get("as_of", "")
+        except (ValueError, TypeError):
+            pass
+
+    for s in stations:
+        code = str(s.get("code", ""))
+        oldcode = str(s.get("oldcode", ""))
+        flow_val = s.get("flow")
+        flow = 0.0
+        if flow_val is not None:
+            try:
+                flow = float(flow_val)
+            except (ValueError, TypeError):
+                flow = 0.0
+
+        if code == "2795" or oldcode == "C.2":
+            c2_flow = flow
+            if not data_time and s.get("measured_at"):
+                data_time = s.get("measured_at")
+        elif (code == "2744" or oldcode == "C.13") and c13_flow == 0.0:
+            c13_flow = flow
+            if not data_time and s.get("measured_at"):
+                data_time = s.get("measured_at")
+        elif code == "2609" or oldcode == "C.35":
+            c35_flow = flow
+
+    # Estimate C.29B = C.35 + 50.0 cms (or C.13 * 0.60 + 50.0 if C.35 unavailable)
+    if c35_flow > 0:
+        c29b_flow = c35_flow + 50.0
+    else:
+        c29b_flow = (c13_flow * 0.60) + 50.0
+
+    # Max 24h rain across BMA stations
+    rain_stations = rain_data.get("stations", [])
+    bkk_rain_vals = []
+    summary_max = rain_data.get("summary", {}).get("max24h", {}).get("v")
+    if summary_max is not None:
+        try:
+            bkk_rain_vals.append(float(summary_max))
+        except (ValueError, TypeError):
+            pass
+    for r in rain_stations:
+        prov = str(r.get("province") or "")
+        agency = str(r.get("agency") or "")
+        if "กรุงเทพ" in prov or "กทม" in agency:
+            v = r.get("r24h")
+            if v is not None:
+                try:
+                    bkk_rain_vals.append(float(v))
+                except (ValueError, TypeError):
+                    pass
+
+    max_rain = max(bkk_rain_vals) if bkk_rain_vals else 0.0
+
+    return {
+        "status": "success",
+        "tier": "Tier 2: POPNIX Flood Open Data (flood.pop.in.th)",
+        "timestamp": data_time or datetime.datetime.now().strftime("%Y-%m-%d %H:00"),
+        "c2": {
+            "name": "C.2 นครสวรรค์",
+            "desc": "รับน้ำเหนือ (ค่ายจิรประวัติ)",
+            "flow": round(c2_flow, 1),
+            "max": 3500.0,
+            "unit": "cms"
+        },
+        "c13": {
+            "name": "C.13 เขื่อนเจ้าพระยา",
+            "desc": "จุดระบายน้ำท้ายเขื่อน จ.ชัยนาท",
+            "flow": round(c13_flow, 1),
+            "max": 3000.0,
+            "unit": "cms"
+        },
+        "c29b": {
+            "name": "C.29B ปทุมธานี [ประเมิน C.35+50]",
+            "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา)",
+            "flow": round(c29b_flow, 1),
+            "max": 3500.0,
+            "unit": "cms"
+        },
+        "rain": {
+            "name": "เรดาร์ฝน กทม. (สะสม 24 ชม.)",
+            "desc": "ปริมาณฝนสะสม 24 ชม. สูงสุด (ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.)",
+            "rate": round(max_rain, 1),
+            "max": 300.0,
+            "unit": "มม."
+        }
+    }
 
 
-def get_live_hydrological_data() -> dict:
+def get_live_hydrological_data(force_tier: int = None) -> dict:
     """Retrieve data with automatic 3-Tier fallback."""
+    forced = force_tier if force_tier is not None else int(os.environ.get("FORCE_TIER", "0") or "0")
+
     # Tier 1
-    try:
-        data = fetch_thaiwater_data()
-        # Persist as Last-Known-Good cache
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        return data
-    except Exception as e:
-        print(f"[WARN] Tier 1 fetch error: {e}", file=sys.stderr)
+    if forced in (0, 1):
+        try:
+            data = fetch_thaiwater_data()
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            return data
+        except Exception as e:
+            print(f"[WARN] Tier 1 fetch error: {e}", file=sys.stderr)
 
     # Tier 2
-    try:
-        data = fetch_fallback_rid_data()
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        return data
-    except Exception as e:
-        print(f"[WARN] Tier 2 fetch error: {e}", file=sys.stderr)
+    if forced in (0, 2):
+        try:
+            data = fetch_fallback_popnix_data()
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            return data
+        except Exception as e:
+            print(f"[WARN] Tier 2 fetch error: {e}", file=sys.stderr)
 
     # Tier 3: Last-Known-Good Cache
     print("[3/3] Falling back to Tier 3 (Last-Known-Good local cache)...")
@@ -192,21 +298,23 @@ def get_live_hydrological_data() -> dict:
                 data = json.load(f)
                 data["tier"] = "Tier 3: Offline Cache (Last-Known-Good)"
                 data["is_cached"] = True
+                data["live_fetch_failed"] = True
                 return data
         except Exception as e:
             print(f"[ERROR] Failed reading cache: {e}", file=sys.stderr)
 
-    # Hard emergency fallback defaults if fresh repo with zero cache
+    # All sources failed and no cache exists: Outage
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:00")
     return {
-        "status": "fallback",
-        "tier": "Tier 3: Emergency Fallback Defaults",
+        "status": "outage",
+        "tier": "Tier 3: All Sources Down (Outage)",
         "timestamp": now_str,
-        "is_cached": True,
-        "c2": {"name": "C.2 นครสวรรค์", "desc": "รับน้ำเหนือ", "flow": 2023.0, "max": 3500.0, "unit": "cms"},
-        "c13": {"name": "C.13 เขื่อนเจ้าพระยา", "desc": "ท้ายเขื่อนชัยนาท", "flow": 2500.0, "max": 3000.0, "unit": "cms"},
-        "c29b": {"name": "C.29B ปทุมธานี [ประเมิน C.35+S.26]", "desc": "ด่านหน้าก่อนเข้า กทม. (ประเมินจาก C.35 อยุธยา + S.26 ป่าสัก)", "flow": 2220.0, "max": 3500.0, "unit": "cms"},
-        "rain": {"name": "เรดาร์ฝน กทม. (สะสม 24 ชม.)", "desc": "ปริมาณฝนสะสม 24 ชม. สูงสุด (ขีดระบาย กทม. 60 มม. | สถิติน้ำท่วมใหญ่ 300 มม.)", "rate": 0.0, "max": 300.0, "unit": "มม."}
+        "is_cached": False,
+        "live_fetch_failed": True,
+        "c2": {"name": "C.2 นครสวรรค์", "desc": "รับน้ำเหนือ", "flow": 0.0, "max": 3500.0, "unit": "cms"},
+        "c13": {"name": "C.13 เขื่อนเจ้าพระยา", "desc": "ท้ายเขื่อนชัยนาท", "flow": 0.0, "max": 3000.0, "unit": "cms"},
+        "c29b": {"name": "C.29B ปทุมธานี [ประเมิน]", "desc": "ด่านหน้าก่อนเข้า กทม.", "flow": 0.0, "max": 3500.0, "unit": "cms"},
+        "rain": {"name": "เรดาร์ฝน กทม. (สะสม 24 ชม.)", "desc": "ปริมาณฝนสะสม 24 ชม. สูงสุด", "rate": 0.0, "max": 300.0, "unit": "มม."}
     }
 
 
@@ -280,12 +388,14 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
     """
     Decide whether to dispatch a LINE notification.
     Rules:
+    - Status == "outage" -> Alert with Outage warning
     - Force flag (--force-alert) -> Alert
     - Emergency Thresholds (Active 365 Days / All Year round):
       - C.29B >= 2,800 cms -> Alert
-      - Rain >= 60.0 mm -> Alert
+      - Rain >= 60.0 mm -> Alert (ONLY if live data, suppressed if is_cached)
       - C.13 >= 1,800 cms -> Alert
       - C.2 >= 2,200 cms -> Alert
+    - Live Fetch Failed (no emergency) -> Alert with Cache warning
     - Seasonal Sunday Heartbeat (Option 1: Seasonal Sentinel):
       - Only active during Peak Flood Season: August to November (Months 8, 9, 10, 11)
       - Kickoff: First Sunday of August
@@ -293,26 +403,32 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
       - Off-season (Dec - Jul): Silent on Sundays to eliminate noise (0 messages)
     - Otherwise -> Silent (exit 0)
     """
+    # 1. Total Outage Check
+    if data.get("status") == "outage":
+        return True, "🚨 [ระบบขัดข้อง] ไม่สามารถดึงข้อมูลน้ำได้จากทุกแหล่งต้นทาง (ThaiWater และ POPNIX ล่ม และไม่มีแคช)"
+
+    # 2. Manual Force Override
+    if force:
+        return True, "⚡ Manual Dispatch: สั่งส่งแจ้งเตือนด้วยคำสั่งตรง (--force-alert)"
+
     now = datetime.datetime.now()
     is_sunday = (now.weekday() == 6) # 6 = Sunday
     month = now.month
     day = now.day
     is_peak_season = (month in [8, 9, 10, 11])
 
-    c13_val = data["c13"]["flow"]
-    c2_val = data["c2"]["flow"]
-    c29b_val = data["c29b"]["flow"]
-    rain_val = data["rain"]["rate"]
+    c13_val = data.get("c13", {}).get("flow", 0.0)
+    c2_val = data.get("c2", {}).get("flow", 0.0)
+    c29b_val = data.get("c29b", {}).get("flow", 0.0)
+    rain_val = data.get("rain", {}).get("rate", 0.0)
+    is_cached = data.get("is_cached", False)
 
-    # 1. Manual Force Override
-    if force:
-        return True, "⚡ Manual Dispatch: สั่งส่งแจ้งเตือนด้วยคำสั่งตรง (--force-alert)"
-
-    # 2. Emergency Thresholds (Active 365 Days / All Year round)
+    # 3. Emergency Thresholds (Active 365 Days / All Year round)
     if c29b_val >= 2800:
         return True, f"⚠️ ด่านหน้า กทม. (C.29B) แตะเกณฑ์เฝ้าระวัง: {c29b_val:,.0f} cms (>= 2,800)"
 
-    if rain_val >= 60.0:
+    # Cache Safety: if is_cached is True, do not trigger emergency alert on rain >= 60.0 (rain is transient)
+    if not is_cached and rain_val >= 60.0:
         return True, f"🌧️ ฝนสะสม 24 ชม. กทม. เกินขีดระบายน้ำ: {rain_val:.1f} มม. (>= 60 มม. เสี่ยงน้ำท่วมขัง)"
 
     if c13_val >= 1800:
@@ -321,7 +437,11 @@ def evaluate_alert_decision(data: dict, force: bool = False) -> tuple:
     if c2_val >= 2200:
         return True, f"⚠️ น้ำเหนือนครสวรรค์สะสมสูง: {c2_val:,.0f} cms (มีผลต่อเขื่อนเจ้าพระยาใน 48 ชม.)"
 
-    # 3. Seasonal Sunday Heartbeat (Only active during August - November)
+    # 4. Live Fetch Failed Alert (All live APIs failed, serving from cache without emergency)
+    if data.get("live_fetch_failed"):
+        return True, "⚠️ [แจ้งเตือนระบบ] ไม่สามารถดึงข้อมูลสดจาก ThaiWater และ POPNIX ได้ กำลังแสดงข้อมูลจากแคชล่าสุด"
+
+    # 5. Seasonal Sunday Heartbeat (Only active during August - November)
     if is_peak_season and is_sunday:
         # First Sunday of August (Kickoff)
         if month == 8 and day <= 7:
@@ -412,6 +532,128 @@ def make_card_item_flex(name: str, val_str: str, max_val: float, unit: str, colo
 
 def build_line_flex_payload(data: dict, trigger_reason: str) -> dict:
     """Build cross-platform LINE Flex Message v2 (size: mega, normalized text)."""
+    if data.get("status") == "outage":
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#991B1B",
+                "paddingAll": "16px",
+                "spacing": "xs",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "FLOOD MONITOR • ALERT",
+                                "color": "#FCA5A5",
+                                "size": "xxs",
+                                "weight": "bold",
+                                "flex": 1
+                            },
+                            {
+                                "type": "text",
+                                "text": f"อัปเดต: {data.get('timestamp', '')}",
+                                "color": "#FECACA",
+                                "size": "xxs",
+                                "align": "end",
+                                "flex": 1
+                            }
+                        ]
+                    },
+                    {
+                        "type": "text",
+                        "text": "🚨 ระบบขัดข้อง (Outage)",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#FFFFFF"
+                    },
+                    {
+                        "type": "text",
+                        "text": trigger_reason,
+                        "size": "xs",
+                        "color": "#FEF08A",
+                        "wrap": True
+                    }
+                ]
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "paddingAll": "16px",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "สถานะการเชื่อมต่อข้อมูล",
+                        "weight": "bold",
+                        "size": "xs",
+                        "color": "#475569"
+                    },
+                    {
+                        "type": "text",
+                        "text": "❌ Tier 1: ThaiWater API (ไม่ตอบสนอง / ขัดข้อง)\n❌ Tier 2: POPNIX Open Data (ไม่ตอบสนอง)\n❌ Tier 3: Local Cache (ไม่พบแคช)",
+                        "size": "xs",
+                        "color": "#DC2626",
+                        "wrap": True
+                    },
+                    {
+                        "type": "text",
+                        "text": "ระบบไม่สามารถประเมินสถานการณ์น้ำได้ในรอบนี้ กรุณาตรวจสอบสถานะโดยตรงจากหน่วยงาน",
+                        "size": "xxs",
+                        "color": "#64748B",
+                        "wrap": True
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "sm",
+                "paddingAll": "12px",
+                "paddingTop": "0px",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": "#0F172A",
+                        "height": "sm",
+                        "flex": 1,
+                        "action": {
+                            "type": "uri",
+                            "label": "ผังน้ำ ThaiWater",
+                            "uri": "https://waterchart.thaiwater.net/basin/chaophraya"
+                        }
+                    },
+                    {
+                        "type": "button",
+                        "style": "secondary",
+                        "height": "sm",
+                        "flex": 1,
+                        "action": {
+                            "type": "uri",
+                            "label": "POPNIX Flood",
+                            "uri": "https://flood.pop.in.th/"
+                        }
+                    }
+                ]
+            }
+        }
+        return {
+            "to": LINE_GROUP_ID,
+            "messages": [
+                {
+                    "type": "flex",
+                    "altText": trigger_reason,
+                    "contents": bubble
+                }
+            ]
+        }
+
     c2_col, c2_tag, _, c2_sub = get_station_status(data["c2"]["flow"], "c2")
     c13_col, c13_tag, _, c13_sub = get_station_status(data["c13"]["flow"], "c13")
     c29b_col, c29b_tag, _, c29b_sub = get_station_status(data["c29b"]["flow"], "c29b")
@@ -561,12 +803,13 @@ def build_line_flex_payload(data: dict, trigger_reason: str) -> dict:
         }
     }
 
+    alt_prefix = "⚠️ " if (data.get("live_fetch_failed") or data.get("is_cached")) else "🌊 "
     return {
         "to": LINE_GROUP_ID,
         "messages": [
             {
                 "type": "flex",
-                "altText": f"🌊 สถานการณ์น้ำ & ฝน กทม. ({data['timestamp']})",
+                "altText": f"{alt_prefix}สถานการณ์น้ำ & ฝน กทม. ({data['timestamp']})",
                 "contents": bubble
             }
         ]
@@ -618,8 +861,10 @@ def compile_dashboard_html(data: dict) -> str:
     r_pct = min(max((data["rain"]["rate"] / data["rain"]["max"]) * 100.0, 3.0), 100.0)
 
     cached_badge = ""
-    if data.get("is_cached"):
-        cached_badge = '<div class="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-2 rounded-lg text-xs mb-4">⚠️ ข้อมูลชั่วคราว: เซิร์ฟเวอร์ต้นทางไม่ตอบสนอง กำลังแสดงข้อมูลล่าสุดที่มีในแคช</div>'
+    if data.get("status") == "outage":
+        cached_badge = '<div class="bg-red-500/10 border border-red-500/30 text-red-600 px-3 py-2 rounded-lg text-xs mb-4 font-semibold">🚨 ระบบขัดข้อง: ไม่สามารถดึงข้อมูลน้ำได้จากทุกแหล่งต้นทาง (ThaiWater และ POPNIX ล่ม และไม่มีแคช)</div>'
+    elif data.get("is_cached"):
+        cached_badge = '<div class="bg-amber-500/10 border border-amber-500/30 text-amber-600 px-3 py-2 rounded-lg text-xs mb-4 font-semibold">⚠️ ข้อมูลชั่วคราว: เซิร์ฟเวอร์ต้นทางไม่ตอบสนอง กำลังแสดงข้อมูลล่าสุดที่มีในแคช</div>'
 
     html = f"""<!DOCTYPE html>
 <html lang="th">
@@ -906,21 +1151,25 @@ def main():
     parser.add_argument("--force-alert", action="store_true", help="Force send LINE Flex alert message regardless of thresholds")
     parser.add_argument("--dry-run", action="store_true", help="Run pipeline and print status without dispatching LINE message")
     parser.add_argument("--build-html", action="store_true", help="Compile and save web/index.html only")
+    parser.add_argument("--tier", choices=["1", "2", "3"], help="Force specific data tier for testing (1=ThaiWater, 2=POPNIX, 3=Cache)")
     args = parser.parse_args()
 
     if not any([args.run, args.test_fetch, args.force_alert, args.dry_run, args.build_html]):
         parser.print_help()
         sys.exit(0)
 
+    force_tier_val = int(args.tier) if args.tier else None
+
     # Mode: Test Fetch
     if args.test_fetch:
-        data = get_live_hydrological_data()
+        data = get_live_hydrological_data(force_tier=force_tier_val)
         print(json.dumps(data, ensure_ascii=False, indent=2))
         sys.exit(0)
 
     # Core Flow
     print("=== Flood Monitor Pipeline Initialized ===")
-    data = get_live_hydrological_data()
+    data = get_live_hydrological_data(force_tier=force_tier_val)
+    print(f"[INFO] Active Data Source: {data.get('tier', 'Unknown')}")
 
     # Always compile & save HTML dashboard
     os.makedirs(WEB_DIR, exist_ok=True)
